@@ -3,8 +3,6 @@
 [System.Reflection.Assembly]::LoadWithPartialName('System.Drawing') 		 | out-null
 [System.Reflection.Assembly]::LoadWithPartialName('WindowsFormsIntegration') | out-null
 
-$icon = [System.Drawing.Icon]::ExtractAssociatedIcon("C:\Windows\System32\mmc.exe")	
-
 
 ################################################################################################################################
 # Start NGROK Server
@@ -16,45 +14,50 @@ $arguments = "http 3000"
 $process = Start-Process $ngrok $arguments -WindowStyle Hidden -passthru
 
 $ngrokOutput = ConvertFrom-Json (Invoke-WebRequest -Uri http://localhost:4040/api/tunnels).Content
-$httpsUrl = $ngrokOutput.tunnels.public_url[0]
-$httpUrl = $ngrokOutput.tunnels.public_url[1]
+$httpUrl = $ngrokOutput.tunnels.public_url[0]
+$httpsUrl = $ngrokOutput.tunnels.public_url[1]
 
 ################################################################################################################################
 # Add the systray menu
 ################################################################################################################################
 	
-$Main_Tool_Icon = New-Object System.Windows.Forms.NotifyIcon
-$Main_Tool_Icon.Text = "NGROK Runner"
-$Main_Tool_Icon.Icon = $icon
-$Main_Tool_Icon.Visible = $true
+$App_Icon = New-Object System.Windows.Forms.NotifyIcon
+$App_Icon.Text = "NGROK Runner"
+$App_Icon.Icon = "$Current_Folder\icons\logo.ico"
+$App_Icon.Visible = $true
 
-$OpenHttpUrl = New-Object System.Windows.Forms.MenuItem
-$OpenHttpUrl.Text = "Open HTTP URL"
+$contextmenu = New-Object System.Windows.Forms.ContextMenuStrip
+$App_Icon.ContextMenuStrip = $contextmenu
 
-$CopyHttpUrl = New-Object System.Windows.Forms.MenuItem
-$CopyHttpUrl.Text = "Copy HTTP URLH"
+# Adding Submenu `Open`
+$Open_SubMenu = $contextmenu.Items.Add("Open In Web Browser");
 
-$OpenHttpsUrl = New-Object System.Windows.Forms.MenuItem
-$OpenHttpsUrl.Text = "Open HTTPS URL"
+$OpenHttp = New-Object System.Windows.Forms.ToolStripMenuItem
+$OpenHttp.Text = "HTTP App"
+$Open_SubMenu.DropDownItems.Add($OpenHttp)
 
-$CopyHttpsUrl = New-Object System.Windows.Forms.MenuItem
-$CopyHttpsUrl.Text = "Copy HTTPS URL"
+$OpenHttps = New-Object System.Windows.Forms.ToolStripMenuItem
+$OpenHttps.Text = "HTTPS App"
+$Open_SubMenu.DropDownItems.Add($OpenHttps)
 
-$ShutdownNgrok = New-Object System.Windows.Forms.MenuItem
-$ShutdownNgrok.Text = "Shutdown Tunnel"
+# Adding Submenu `Copy to clipboard`
+$Copy_SubMenu = $contextmenu.Items.Add("Copy To Clipboard");
 
-$contextmenu = New-Object System.Windows.Forms.ContextMenu
-$Main_Tool_Icon.ContextMenu = $contextmenu
-$Main_Tool_Icon.contextMenu.MenuItems.AddRange($OpenHttpUrl)
-$Main_Tool_Icon.contextMenu.MenuItems.AddRange($CopyHttpUrl)
-$Main_Tool_Icon.contextMenu.MenuItems.AddRange($OpenHttpsUrl)
-$Main_Tool_Icon.contextMenu.MenuItems.AddRange($CopyHttpsUrl)
-$Main_Tool_Icon.contextMenu.MenuItems.AddRange($ShutdownNgrok)
+$CopyHttp = New-Object System.Windows.Forms.ToolStripMenuItem
+$CopyHttp.Text = "HTTP Url"
+$Copy_SubMenu.DropDownItems.Add($CopyHttp)
+
+$CopyHttps = New-Object System.Windows.Forms.ToolStripMenuItem
+$CopyHttps.Text = "HTTPS Url"
+$Copy_SubMenu.DropDownItems.Add($CopyHttps)
+
+# Adding item `Copy to clipboard`
+$Exit = $contextmenu.Items.Add("Exit");
 
 # ---------------------------------------------------------------------
 # Action when after a click on the systray icon
 # ---------------------------------------------------------------------
-$Main_Tool_Icon.Add_Click({
+$App_Icon.Add_Click({
 	If ($_.Button -eq [Windows.Forms.MouseButtons]::Left) {
 		Start-Process 'http://localhost:4040'
 	}
@@ -63,37 +66,37 @@ $Main_Tool_Icon.Add_Click({
 # ---------------------------------------------------------------------
 # Action after clicking on Open Http URL
 # ---------------------------------------------------------------------
-$OpenHttpUrl.Add_Click({
+$OpenHttp.Add_Click({
 	Start-Process $httpUrl
 })
 
 # ---------------------------------------------------------------------
 # Action after clicking on Open Https URL
 # ---------------------------------------------------------------------
-$OpenHttpsUrl.Add_Click({
+$OpenHttps.Add_Click({
 	Start-Process $httpsUrl
 })
 
 # ---------------------------------------------------------------------
 # Action after clicking on Open Https URL
 # ---------------------------------------------------------------------
-$CopyHttpUrl.Add_Click({
+$CopyHttp.Add_Click({
 	$httpUrl | clip
 })
 
 # ---------------------------------------------------------------------
 # Action after clicking on Open Https URL
 # ---------------------------------------------------------------------
-$CopyHttpsUrl.Add_Click({
+$CopyHttps.Add_Click({
 	$httpsUrl | clip
 })
 
 # ---------------------------------------------------------------------
 # When Exit is clicked, shutdown NGROK and kill the PowerShell process
 # ---------------------------------------------------------------------
-$ShutdownNgrok.Add_Click({
+$Exit.Add_Click({
 	Stop-Process -Id $process.Id
-	$Main_Tool_Icon.Visible = $false
+	$App_Icon.Visible = $false
 	Stop-Process $pid
 })
 
