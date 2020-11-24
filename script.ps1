@@ -1,12 +1,47 @@
-Install-Module powershell-yaml
 [System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms')  	 | out-null
 [System.Reflection.Assembly]::LoadWithPartialName('presentationframework') 	 | out-null
 [System.Reflection.Assembly]::LoadWithPartialName('System.Drawing') 		 | out-null
 [System.Reflection.Assembly]::LoadWithPartialName('WindowsFormsIntegration') | out-null
 
+$App_Icon = New-Object System.Windows.Forms.NotifyIcon
 $Current_Folder = split-path $MyInvocation.MyCommand.Path
 $Binaries = "$Current_Folder\bin"
 $config_url = ".\bin\config.yml"
+
+# -----------------------------------------------------------------------------------
+# Caching all Icons
+# -----------------------------------------------------------------------------------
+$App_Tray_Icon = "$Current_Folder\icons\logo.ico"
+$Dashboard_Icon = [System.Drawing.Bitmap]::FromFile("$Current_Folder\icons\dashboard.png")
+$Web_Icon = [System.Drawing.Bitmap]::FromFile("$Current_Folder\icons\web.png")
+$Copy_Icon = [System.Drawing.Bitmap]::FromFile("$Current_Folder\icons\copy.png")
+$Safe_Icon = [System.Drawing.Bitmap]::FromFile("$Current_Folder\icons\safe.png")
+$Unsafe_Icon = [System.Drawing.Bitmap]::FromFile("$Current_Folder\icons\unsafe.png")
+$Region_Icon = [System.Drawing.Bitmap]::FromFile("$Current_Folder\icons\region.png")
+$Tick_Icon = [System.Drawing.Bitmap]::FromFile("$Current_Folder\icons\tick.png")
+$Cross_Icon = [System.Drawing.Bitmap]::FromFile("$Current_Folder\icons\exit.png")
+$WarningIcon = [System.Windows.MessageBoxImage]::Warning
+
+try {
+    Import-Module powershell-yaml -Force -Erroraction stop
+} 
+catch {
+	$ButtonType = [System.Windows.MessageBoxButton]::YesNo
+	$MessageboxTitle = "Failed to load dependencies!"
+	$Messageboxbody = "Few dependencies are required to be installed.`nPress yes to download them."
+	$response = [System.Windows.MessageBox]::Show($Messageboxbody, $MessageboxTitle, $ButtonType, $WarningIcon)
+
+	if ($response -eq "Yes") {
+		$App_Icon.Text = "NGROK Runner - Downloading Dependencies"
+		$App_Icon.Icon = $App_Tray_Icon
+		$App_Icon.Visible = $true
+
+		Install-Module powershell-yaml -Force
+	}
+	else {
+		Stop-Process -Id $pid
+	}
+}
 
 ################################################################################################################################
 # Parse config.yml
@@ -17,7 +52,6 @@ foreach ($line in $fileContent) {
 	$content = $content + "`n" + $line 
 }
 $config = ConvertFrom-YAML $content
-
 
 ################################################################################################################################
 # Start NGROK Server
@@ -42,20 +76,6 @@ $httpsUrl = $public_urls[1]
 # Add the systray menu
 ################################################################################################################################
 
-# -----------------------------------------------------------------------------------
-# Caching all Icons
-# -----------------------------------------------------------------------------------
-$App_Tray_Icon = "$Current_Folder\icons\logo.ico"
-$Dashboard_Icon = [System.Drawing.Bitmap]::FromFile("$Current_Folder\icons\dashboard.png")
-$Web_Icon = [System.Drawing.Bitmap]::FromFile("$Current_Folder\icons\web.png")
-$Copy_Icon = [System.Drawing.Bitmap]::FromFile("$Current_Folder\icons\copy.png")
-$Safe_Icon = [System.Drawing.Bitmap]::FromFile("$Current_Folder\icons\safe.png")
-$Unsafe_Icon = [System.Drawing.Bitmap]::FromFile("$Current_Folder\icons\unsafe.png")
-$Region_Icon = [System.Drawing.Bitmap]::FromFile("$Current_Folder\icons\region.png")
-$Tick_Icon = [System.Drawing.Bitmap]::FromFile("$Current_Folder\icons\tick.png")
-$Cross_Icon = [System.Drawing.Bitmap]::FromFile("$Current_Folder\icons\exit.png")
-
-$App_Icon = New-Object System.Windows.Forms.NotifyIcon
 $App_Icon.Text = "NGROK Runner"
 $App_Icon.Icon = $App_Tray_Icon
 $App_Icon.Visible = $true
@@ -151,6 +171,7 @@ for ($i = 0; $i -lt $Country_Names.Length; $i++) {
 		# Restart NGROK Server
 		Start-Process -WindowStyle hidden powershell.exe "$Current_Folder\script.ps1"
 		$App_Icon.Visible = $false
+		Stop-Process -Name "ngrok"
 		Stop-Process -Id $pid
 	}.GetNewClosure())
 	$Region_SubMenu.DropDownItems.Add($Country)
@@ -163,11 +184,12 @@ $Quit = $contextmenu.Items.Add("Quit")
 $Quit.Image = $Cross_Icon
 $Quit.Add_Click({
 	$App_Icon.Visible = $false
+	Stop-Process -Name "ngrok"
 	Stop-Process -Id $pid
 })
 
 
-# Make PowerShell Disappear
+Make PowerShell Disappear
 $windowcode = '[DllImport("user32.dll")] public static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);'
 $asyncwindow = Add-Type -MemberDefinition $windowcode -name Win32ShowWindowAsync -namespace Win32Functions -PassThru
 $null = $asyncwindow::ShowWindowAsync((Get-Process -PID $pid).MainWindowHandle, 0)
