@@ -1,17 +1,28 @@
+Install-Module powershell-yaml
 [System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms')  	 | out-null
 [System.Reflection.Assembly]::LoadWithPartialName('presentationframework') 	 | out-null
 [System.Reflection.Assembly]::LoadWithPartialName('System.Drawing') 		 | out-null
 [System.Reflection.Assembly]::LoadWithPartialName('WindowsFormsIntegration') | out-null
+$Current_Folder = split-path $MyInvocation.MyCommand.Path;
+$Binaries = "$Current_Folder\bin"
+
+################################################################################################################################
+# Parse config.yml
+################################################################################################################################
+$fileContent = Get-Content -Path ".\bin\config.yml"
+$content = ''
+foreach ($line in $fileContent) { 
+	$content = $content + "`n" + $line 
+}
+$config = ConvertFrom-YAML $content
 
 
 ################################################################################################################################
 # Start NGROK Server
 ################################################################################################################################
 
-$Current_Folder = split-path $MyInvocation.MyCommand.Path;
-$Binaries = "$Current_Folder\bin"
 $ngrok = "$Binaries\ngrok.exe"
-$arguments = "http -config=$Binaries\config.yml 3000"
+$arguments = "http -config $Binaries\auth.yml -config $Binaries\config.yml 3000"
 $process = Start-Process $ngrok $arguments -WindowStyle Hidden -passthru
 
 $ngrokOutput = ConvertFrom-Json (Invoke-WebRequest -Uri http://localhost:4040/api/tunnels).Content
@@ -32,6 +43,8 @@ $Web_Icon = [System.Drawing.Bitmap]::FromFile("$Current_Folder\icons\web.png");
 $Copy_Icon = [System.Drawing.Bitmap]::FromFile("$Current_Folder\icons\copy.png");
 $Safe_Icon = [System.Drawing.Bitmap]::FromFile("$Current_Folder\icons\safe.png");
 $Unsafe_Icon = [System.Drawing.Bitmap]::FromFile("$Current_Folder\icons\unsafe.png");
+$Region_Icon = [System.Drawing.Bitmap]::FromFile("$Current_Folder\icons\region.png");
+$Tick_Icon = [System.Drawing.Bitmap]::FromFile("$Current_Folder\icons\tick.png");
 $Cross_Icon = [System.Drawing.Bitmap]::FromFile("$Current_Folder\icons\exit.png");
 
 
@@ -48,7 +61,9 @@ $App_Icon.Add_Click({
 $contextmenu = New-Object System.Windows.Forms.ContextMenuStrip
 $App_Icon.ContextMenuStrip = $contextmenu
 
-# Adding item `Open Dashboard`
+# -----------------------------------------------------------------------------------
+# Adding Submenu `Open Dashboard`
+# -----------------------------------------------------------------------------------
 $Dashboard = $contextmenu.Items.Add("Open Dashboard");
 $Dashboard.Image = $Dashboard_Icon
 $Dashboard.Add_Click({
@@ -99,7 +114,34 @@ $CopyHttp.Add_Click({
 })
 $Copy_SubMenu.DropDownItems.Add($CopyHttp)
 
-# Adding item `Copy to clipboard`
+# -----------------------------------------------------------------------------------
+# Adding Submenu `Region (Country)`
+# -----------------------------------------------------------------------------------
+$Selected_Region = 'us'
+if ($config.region -ne $NULL) {
+	$Selected_Region = $config.region
+}
+
+$Region_SubMenu = $contextmenu.Items.Add("Region ($Selected_Region)");
+$Region_SubMenu.Image = $Region_Icon
+
+$Country_Names = @("Asia/Pacific","Australia","Europe","India","Japan","South America","United States")
+$Country_Codes = @("ap","au","eu","in","jp","sa","us")
+for ($i = 0; $i -lt $Country_Names.Length; $i++) {
+	$Country = New-Object System.Windows.Forms.ToolStripMenuItem
+	$Country.Text = $Country_Names[$i]
+	if ($Country_Codes[$i] -eq $Selected_Region) {
+		$Country.Image = $Tick_Icon
+	}
+	$Country.Add_Click({
+		$config.region = $Country_Codes[$i]
+	})
+	$Region_SubMenu.DropDownItems.Add($Country)
+}
+
+# -----------------------------------------------------------------------------------
+# Adding Submenu `Quit`
+# -----------------------------------------------------------------------------------
 $Quit = $contextmenu.Items.Add("Quit");
 $Quit.Image = $Cross_Icon
 $Quit.Add_Click({
