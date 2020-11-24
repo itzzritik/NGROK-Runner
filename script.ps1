@@ -9,8 +9,9 @@
 ################################################################################################################################
 
 $Current_Folder = split-path $MyInvocation.MyCommand.Path;
-$ngrok = "$Current_Folder\ngrok.exe"
-$arguments = "http 3000"
+$Binaries = "$Current_Folder\bin"
+$ngrok = "$Binaries\ngrok.exe"
+$arguments = "http -config=$Binaries\config.yml 3000"
 $process = Start-Process $ngrok $arguments -WindowStyle Hidden -passthru
 
 $ngrokOutput = ConvertFrom-Json (Invoke-WebRequest -Uri http://localhost:4040/api/tunnels).Content
