@@ -31,7 +31,7 @@ $Web_Icon = [System.Drawing.Bitmap]::FromFile("$Current_Folder\icons\web.png");
 $Copy_Icon = [System.Drawing.Bitmap]::FromFile("$Current_Folder\icons\copy.png");
 $Safe_Icon = [System.Drawing.Bitmap]::FromFile("$Current_Folder\icons\safe.png");
 $Unsafe_Icon = [System.Drawing.Bitmap]::FromFile("$Current_Folder\icons\unsafe.png");
-$Exit_Icon = [System.Drawing.Bitmap]::FromFile("$Current_Folder\icons\exit.png");
+$Cross_Icon = [System.Drawing.Bitmap]::FromFile("$Current_Folder\icons\exit.png");
 
 
 $App_Icon = New-Object System.Windows.Forms.NotifyIcon
@@ -48,7 +48,7 @@ $contextmenu = New-Object System.Windows.Forms.ContextMenuStrip
 $App_Icon.ContextMenuStrip = $contextmenu
 
 # Adding item `Open Dashboard`
-$Dashboard = $contextmenu.Items.Add("Open NGROK Dashboard");
+$Dashboard = $contextmenu.Items.Add("Open Dashboard");
 $Dashboard.Image = $Dashboard_Icon
 $Dashboard.Add_Click({
 	Start-Process 'http://localhost:4040'
@@ -57,51 +57,51 @@ $Dashboard.Add_Click({
 # -----------------------------------------------------------------------------------
 # Adding Submenu `Open`
 # -----------------------------------------------------------------------------------
-$Open_SubMenu = $contextmenu.Items.Add("Open In Web Browser");
+$Open_SubMenu = $contextmenu.Items.Add("Open in web browser");
 $Open_SubMenu.Image = $Web_Icon
 
-$OpenHttp = New-Object System.Windows.Forms.ToolStripMenuItem
-$OpenHttp.Text = "HTTP App"
-$OpenHttp.Image = $Unsafe_Icon
-$OpenHttp.Add_Click({
-	Start-Process $httpUrl
-})
-$Open_SubMenu.DropDownItems.Add($OpenHttp)
-
 $OpenHttps = New-Object System.Windows.Forms.ToolStripMenuItem
-$OpenHttps.Text = "HTTPS App"
+$OpenHttps.Text = "Https App"
 $OpenHttps.Image = $Safe_Icon
 $OpenHttps.Add_Click({
 	Start-Process $httpsUrl
 })
 $Open_SubMenu.DropDownItems.Add($OpenHttps)
 
+$OpenHttp = New-Object System.Windows.Forms.ToolStripMenuItem
+$OpenHttp.Text = "Http App"
+$OpenHttp.Image = $Unsafe_Icon
+$OpenHttp.Add_Click({
+	Start-Process $httpUrl
+})
+$Open_SubMenu.DropDownItems.Add($OpenHttp)
+
 # -----------------------------------------------------------------------------------
 # Adding Submenu `Copy to clipboard`
 # -----------------------------------------------------------------------------------
-$Copy_SubMenu = $contextmenu.Items.Add("Copy To Clipboard");
+$Copy_SubMenu = $contextmenu.Items.Add("Copy to clipboard");
 $Copy_SubMenu.Image = $Copy_Icon
 
-$CopyHttp = New-Object System.Windows.Forms.ToolStripMenuItem
-$CopyHttp.Text = "HTTP Url"
-$CopyHttp.Image = $Unsafe_Icon
-$CopyHttp.Add_Click({
-	$httpUrl | clip
-})
-$Copy_SubMenu.DropDownItems.Add($CopyHttp)
-
 $CopyHttps = New-Object System.Windows.Forms.ToolStripMenuItem
-$CopyHttps.Text = "HTTPS Url"
+$CopyHttps.Text = "Https Url"
 $CopyHttps.Image = $Safe_Icon
 $CopyHttps.Add_Click({
 	$httpsUrl | clip
 })
 $Copy_SubMenu.DropDownItems.Add($CopyHttps)
 
+$CopyHttp = New-Object System.Windows.Forms.ToolStripMenuItem
+$CopyHttp.Text = "Http Url"
+$CopyHttp.Image = $Unsafe_Icon
+$CopyHttp.Add_Click({
+	$httpUrl | clip
+})
+$Copy_SubMenu.DropDownItems.Add($CopyHttp)
+
 # Adding item `Copy to clipboard`
-$Exit = $contextmenu.Items.Add("Exit");
-$Exit.Image = $Exit_Icon
-$Exit.Add_Click({
+$Quit = $contextmenu.Items.Add("Quit");
+$Quit.Image = $Cross_Icon
+$Quit.Add_Click({
 	Stop-Process -Id $process.Id
 	$App_Icon.Visible = $false
 	Stop-Process $pid
