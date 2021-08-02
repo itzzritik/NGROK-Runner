@@ -36,7 +36,19 @@ catch {
 		$App_Icon.Icon = $App_Tray_Icon
 		$App_Icon.Visible = $true
 
+		$contextmenu = New-Object System.Windows.Forms.ContextMenuStrip
+		$App_Icon.ContextMenuStrip = $contextmenu
+
+		$Quit = $contextmenu.Items.Add("Quit")
+		$Quit.Image = $Cross_Icon
+		$Quit.Add_Click({
+			$App_Icon.Visible = $false
+			Stop-Process -Name "ngrok"
+			Stop-Process -Id $pid
+		})
+
 		Install-Module powershell-yaml -Force
+		$App_Icon.Text = "NGROK Runner - Loading Application"
 	}
 	else {
 		Stop-Process -Id $pid
@@ -189,7 +201,7 @@ $Quit.Add_Click({
 })
 
 
-Make PowerShell Disappear
+#Make PowerShell Disappear
 $windowcode = '[DllImport("user32.dll")] public static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);'
 $asyncwindow = Add-Type -MemberDefinition $windowcode -name Win32ShowWindowAsync -namespace Win32Functions -PassThru
 $null = $asyncwindow::ShowWindowAsync((Get-Process -PID $pid).MainWindowHandle, 0)
